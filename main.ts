@@ -16,7 +16,19 @@
 // The program writes exactly that one emoji to /output/entry.txt and
 // nothing else. Fully offline, deterministic, no network, no randomness,
 // no clock, no API key.
-import { mkdirSync, writeFileSync } from "node:fs";
+//
+// After writing, it reads the file back and verifies the gate itself:
+// exactly one Unicode code point, 4 bytes of UTF-8, no trailing newline.
+// If the check ever fails the program exits non-zero instead of leaving
+// a file the sealed scorer would mark invalid.
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+
+const EMOJI = "🤗";
 
 mkdirSync("/output", { recursive: true });
-writeFileSync("/output/entry.txt", "🤗", "utf8");
+writeFileSync("/output/entry.txt", EMOJI, "utf8");
+
+const back = readFileSync("/output/entry.txt", "utf8");
+if ([...back].length !== 1 || back !== EMOJI || Buffer.byteLength(back, "utf8") !== 4) {
+  throw new Error("entry.txt failed its own gate check: expected exactly one emoji");
+}
